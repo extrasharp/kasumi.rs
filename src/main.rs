@@ -10,12 +10,18 @@ use cpal::{
     self,
     Data,
     SampleRate,
+    BufferSize,
     traits::*,
 };
 
 use kasumi::{
+    AudioContext,
+    CallbackBuffer,
+    CALLBACK_BUFFER_LEN,
     modules::*,
 };
+
+//
 
 fn main() {
     let host = cpal::default_host();
@@ -29,12 +35,14 @@ fn main() {
         .expect("error while querying configs");
     let supported_config_range = supported_configs_ranges.next()
         .expect("no supported configs");
+
     let s_conf = supported_config_range.with_sample_rate(SampleRate(44100));
+
     let mut config = s_conf.config();
     config.channels = 2;
 
+    let (sine, sctl) = Sine::new();
     let (util, tx) = Utility::new();
-    let sine = Sine::new();
     let chain = Chain::new(vec![
         Box::new(sine),
         Box::new(util),
@@ -44,6 +52,7 @@ fn main() {
     ]);
 
     let mut ac = AudioContext::new();
+    let mut callback_buf = CallbackBuffer::new();
 
     let stream = device.build_output_stream(
         &config,
@@ -52,12 +61,11 @@ fn main() {
 
             mixer.frame(&ac);
 
-            let dummy = [0.; 2];
-            for i in 0..(data.len()/2) {
-                let mut buf = [0.; 2];
-                mixer.compute(&ac, &dummy, &mut buf);
-                data[i * 2] = buf[0];
-                data[i * 2 + 1] = buf[1];
+            for chunk in data.chunks_mut(CALLBACK_BUFFER_LEN) {
+                callback_buf.fill_in_buf_f32(chunk);
+                let (in_buf, out_buf) = callback_buf.buffers();
+                mixer.compute(&ac, in_buf, out_buf);
+                callback_buf.take_out_buf_f32(chunk);
             }
         },
         move | err | {
@@ -69,7 +77,9 @@ fn main() {
     loop {
         thread::sleep(Duration::from_secs(1));
         tx.send(Instant::now() + Duration::from_millis(500), UtilityEvent::Pan(1.));
+        sctl.set_frequency(Instant::now() + Duration::from_millis(250), 880.);
         thread::sleep(Duration::from_secs(1));
+        sctl.set_frequency(Instant::now() + Duration::from_millis(250), 440.);
         tx.send(Instant::now(), UtilityEvent::Pan(-1.));
     }
 }

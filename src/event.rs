@@ -10,8 +10,8 @@ use crate::{
 };
 
 pub struct Event<T> {
-    pub timestamp: Instant,
-    pub data: T,
+    timestamp: Instant,
+    data: T,
 }
 
 impl<T> Event<T> {
