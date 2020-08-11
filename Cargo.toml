@@ -7,8 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jack = "0.6"
+# jack = "0.6"
 # flume = "0.7"
 crossbeam-queue = "0.2"
+crossbeam-utils = "0.7"
 # cpal = "0.12"
 cpal = {git = "https://github.com/RustAudio/cpal" }
+hound = "3"
+
+petgraph = "0.5"

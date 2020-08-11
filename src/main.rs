@@ -13,17 +13,26 @@ use cpal::{
     BufferSize,
     traits::*,
 };
+use crossbeam_utils::atomic::AtomicCell;
 
 use kasumi::{
     AudioContext,
     CallbackBuffer,
     CALLBACK_BUFFER_LEN,
     modules::*,
+    sample_buffer::*,
+    event::*,
 };
 
 //
 
 fn main() {
+}
+
+/*
+fn main() {
+    println!("acell fl {}", AtomicCell::<f32>::is_lock_free());
+
     let host = cpal::default_host();
 
     let mut devices = host.devices().unwrap();
@@ -41,15 +50,28 @@ fn main() {
     let mut config = s_conf.config();
     config.channels = 2;
 
+    /*
+    let amen = SampleBuffer::from_file("content/rock_scratch.wav");
+    let (bplay, bpctl) = BufPlayer::new();
+    bpctl.set_buffer(Instant::now(), std::sync::Arc::new(amen));
+    bpctl.set_play_rate(Instant::now(), 1.75);
+    bpctl.play(Instant::now());
+
+    // let (sine2, s2ctl) = Sine2::new();
+    let (mut csine2, csine2ctl) = make_controlled(Sine2::new());
+
     let (sine, sctl) = Sine::new();
     let (util, tx) = Utility::new();
     let chain = Chain::new(vec![
-        Box::new(sine),
+        // Box::new(sine),
+        // Box::new(bplay),
+        // Box::new(sine2),
         Box::new(util),
     ]);
     let (mut mixer, mctl) = Mixer::new(vec![
         Box::new(chain),
     ]);
+    */
 
     let mut ac = AudioContext::new();
     let mut callback_buf = CallbackBuffer::new();
@@ -76,10 +98,23 @@ fn main() {
 
     loop {
         thread::sleep(Duration::from_secs(1));
-        tx.send(Instant::now() + Duration::from_millis(500), UtilityEvent::Pan(1.));
-        sctl.set_frequency(Instant::now() + Duration::from_millis(250), 880.);
+        csine2ctl.send(Instant::now(), | s2 | {
+            s2.set_frequency(880.);
+        });
         thread::sleep(Duration::from_secs(1));
-        sctl.set_frequency(Instant::now() + Duration::from_millis(250), 440.);
-        tx.send(Instant::now(), UtilityEvent::Pan(-1.));
+        csine2ctl.send(Instant::now(), | s2 | {
+            s2.set_frequency(440.);
+        });
+        /*
+        thread::sleep(Duration::from_secs(1));
+        // s2ctl.do_action(Instant::now(), | s2 | s2.set_frequency(880.));
+        // tx.send(Instant::now() + Duration::from_millis(500), UtilityEvent::Pan(1.));
+        // sctl.set_frequency(Instant::now() + Duration::from_millis(250), 880.);
+        thread::sleep(Duration::from_secs(1));
+        // s2ctl.do_action(Instant::now(), | s2 | s2.set_frequency(440.));
+        // sctl.set_frequency(Instant::now() + Duration::from_millis(250), 440.);
+        // tx.send(Instant::now(), UtilityEvent::Pan(-1.));
+        */
     }
 }
+*/

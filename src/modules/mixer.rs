@@ -47,7 +47,7 @@ impl Mixer {
 
 impl Module for Mixer {
     fn frame(&mut self, ctx: &AudioContext) {
-        if let Some(event) = self.rx.try_recv(ctx.now) {
+        while let Some(event) = self.rx.try_recv(ctx.now) {
             match event {
                 MixerEvent::AddModule(module) => self.modules.push(module),
                 MixerEvent::RemoveModule(idx) => {

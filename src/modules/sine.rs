@@ -33,7 +33,7 @@ impl Sine {
 
 impl Module for Sine {
     fn frame(&mut self, ctx: &AudioContext) {
-        if let Some(event) = self.rx.try_recv(ctx.now) {
+        while let Some(event) = self.rx.try_recv(ctx.now) {
             match event {
                 SineEvent::Frequency(freq) => self.freq = freq,
             }

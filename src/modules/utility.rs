@@ -42,7 +42,7 @@ impl Utility {
 
 impl Module for Utility {
     fn frame(&mut self, ctx: &AudioContext) {
-        if let Some(event) = self.rx.try_recv(ctx.now) {
+        while let Some(event) = self.rx.try_recv(ctx.now) {
             match event {
                 UtilityEvent::Volume(val) => self.volume = val,
                 UtilityEvent::Pan(val) => self.pan = val,

@@ -5,24 +5,29 @@ use crate::{
 };
 
 pub trait Module: Send {
-    fn frame(&mut self, _ctx: &AudioContext) {}
-    fn compute(&mut self,
-               ctx: &AudioContext,
-               in_buf: &[Sample],
-               out_buf: &mut [Sample]);
+    fn compute(&mut self, ctx: &AudioContext);
+    fn out_buffer(&self) -> &[Sample];
 }
 
+/*
 mod mixer;
 pub use mixer::*;
 
 mod sine;
 pub use sine::*;
 
+mod sine2;
+pub use sine2::*;
+
 mod chain;
 pub use chain::*;
 
 mod utility;
 pub use utility::*;
+
+mod buf_player;
+pub use buf_player::*;
+*/
 
 /*
 
