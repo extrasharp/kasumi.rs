@@ -1,5 +1,7 @@
 use std::time::Instant;
 use std::any::Any;
+use std::cell::RefCell;
+use std::sync::Arc;
 
 use petgraph::{
     algo::{
@@ -15,72 +17,47 @@ use crate::{
     modules::Module,
     AudioContext,
     Sample,
+    CALLBACK_BUFFER_LEN,
 };
 
-/*
-pub struct GraphModule<T: Module + ?Sized> {
-    module: Box<T>,
-    rx: Option<EventReceiver<Box<dyn FnOnce(&mut T) + Send>>>,
+pub struct GraphNode {
+    // TODO, proper ::new()
+    pub name: String,
+    pub module: Box<dyn Module>,
+    pub out_buf: [Sample; CALLBACK_BUFFER_LEN],
 }
 
-impl<T: Module + ?Sized> GraphModule<T> {
-    pub fn new(module: Box<T>,
-               rx: Option<EventReceiver<Box<dyn FnOnce(&mut T) + Send>>>
-    ) -> Self {
-        Self {
-            module,
-            rx,
-        }
-    }
-
-    /*
-    pub fn new_with_channel(module: Box<T>
-    ) -> (Self, EventSender<Box<dyn FnOnce(&mut T) + Send>>) {
-        let (tx, rx) = event_channel(50);
-        (Self {
-            module,
-            rx: Some(rx),
-        }, tx)
-    }
-    */
-}
-*/
-
-pub struct AudioGraph {
-    graph: Graph<Box<dyn Module>, ()>,
+pub struct ModuleGraph {
+    output: NodeIndex,
+    graph: Graph<GraphNode, ()>,
     sort: Vec<NodeIndex>,
 }
 
-impl AudioGraph {
-    pub fn new(graph: Graph<Box<dyn Module>, ()>) -> Result<Self, Cycle<NodeIndex>> {
+impl ModuleGraph {
+    pub fn new(graph: Graph<GraphNode, ()>, output: NodeIndex) -> Result<Self, Cycle<NodeIndex>> {
         let sort = algo::toposort(&graph, None)?;
         Ok(Self {
+            output,
             graph,
             sort,
         })
     }
 
-    // pub fn add_node(&mut self, gmod: GraphModule<impl Module>) {
-        // self.graph.add_node(gmod);
-    // }
-
-    /*
-    pub fn recv(&mut self, now: Instant) {
-        for gmod in self.graph.node_weights_mut() {
-            if let Some(rx) = &gmod.rx {
-                if let Some(event) = rx.try_recv(now) {
-                    event(&mut *gmod.module);
-                }
-            }
+    pub fn frame(&mut self, ctx: &AudioContext) {
+        for node in self.graph.node_weights_mut() {
+            node.module.frame(ctx);
         }
     }
-    */
 
     pub fn compute(&mut self, ctx: &AudioContext, out_buf: &mut [Sample]) {
+        let buf_len = out_buf.len();
         for idx in &self.sort {
-            // TODO keep a buffer in gmod
-            let module = &mut self.graph[*idx];
-            module.compute(ctx, out_buf);
+            let node = &mut self.graph[*idx];
+            node.module.compute(ctx, &mut node.out_buf[0..buf_len]);
+        }
+        let out_node = &mut self.graph[self.output];
+        for i in 0..buf_len {
+            out_buf[i] = out_node.out_buf[i];
         }
     }
 }

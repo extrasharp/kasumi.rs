@@ -1,12 +1,15 @@
 use crate::{
-    event::*,
     AudioContext,
     Sample,
 };
 
 pub trait Module: Send {
+    fn frame(&mut self, _ctx: &AudioContext) { }
     fn compute(&mut self, ctx: &AudioContext, out_buf: &mut [Sample]);
 }
+
+mod controlled;
+pub use controlled::*;
 
 mod sine;
 pub use sine::*;
