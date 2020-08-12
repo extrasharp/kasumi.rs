@@ -19,7 +19,7 @@ use cpal::{
 use petgraph::Graph;
 
 use kasumi::{
-    AudioContext,
+    ComputeContext,
     CallbackBuffer,
     CALLBACK_BUFFER_LEN,
     modules::*,
@@ -48,19 +48,38 @@ fn main() {
     let mut config = s_conf.config();
     config.channels = 2;
 
+    let mut graph = Graph::<std::cell::RefCell<GraphNode>, ()>::new();
+
     let sine = Sine::new();
     let (sine, ctl_sine) = Controlled::new(sine);
-
-    let mut graph = Graph::<GraphNode, ()>::new();
-    let s_idx = graph.add_node(GraphNode {
+    let s_idx = graph.add_node(std::cell::RefCell::new(GraphNode {
         name: "sine".to_owned(),
         module: Box::new(sine),
         out_buf: [0.; CALLBACK_BUFFER_LEN],
-    });
+    }));
 
-    let mut a_graph = ModuleGraph::new(graph, s_idx).unwrap();
+    let util = Utility::new(s_idx);
+    let (util, ctl_util) = Controlled::new(util);
+    let u_idx = graph.add_node(std::cell::RefCell::new(GraphNode {
+        name: "util".to_owned(),
+        module: Box::new(util),
+        out_buf: [0.; CALLBACK_BUFFER_LEN],
+    }));
 
-    let mut ac = AudioContext::new();
+    graph.add_edge(s_idx, u_idx, ());
+
+    let mixer = Mixer::new(vec![u_idx]);
+    let m_idx = graph.add_node(std::cell::RefCell::new(GraphNode {
+        name: "mixer".to_owned(),
+        module: Box::new(mixer),
+        out_buf: [0.; CALLBACK_BUFFER_LEN],
+    }));
+
+    graph.add_edge(u_idx, m_idx, ());
+
+    let mut a_graph = ModuleGraph::new(graph, m_idx).unwrap();
+
+    let mut ac = ComputeContext::new();
     let mut callback_buf = CallbackBuffer::new();
 
     let stream = device.build_output_stream(

@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{
     event::*,
-    AudioContext,
+    audio_graph::GraphContext,
     Sample,
 };
 
@@ -29,8 +29,8 @@ impl Sine {
 }
 
 impl Module for Sine {
-    fn compute(&mut self, ctx: &AudioContext, out_buf: &mut [Sample]) {
-        let sr = ctx.sample_rate as f32;
+    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
+        let sr = ctx.audio_context.sample_rate as f32;
         let p_base = std::f32::consts::PI * 2. * self.freq / sr;
         for i in 0..(out_buf.len() / 2) {
             let period = self.frame_ct as f32 * p_base;

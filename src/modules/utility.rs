@@ -1,62 +1,39 @@
-use std::{
-    time::{
-        Instant,
-    },
-};
+use petgraph::graph::NodeIndex;
 
 use crate::{
-    event::*,
-    AudioContext,
     Sample,
+    audio_graph::GraphContext,
 };
 
 use super::Module;
 
 //
 
-#[derive(Debug)]
-pub enum UtilityEvent {
-    // 0 to 1
-    Volume(f32),
-    // -1 to 1
-    Pan(f32),
-}
-
 pub struct Utility {
-    rx: EventReceiver<UtilityEvent>,
+    input: NodeIndex,
     volume: f32,
     pan: f32,
 }
 
 impl Utility {
-    pub fn new() -> (Self, EventSender<UtilityEvent>) {
-        let (tx, rx) = event_channel(50);
-        let ret = Self {
-            rx,
+    pub fn new(input: NodeIndex) -> Self {
+        Self {
+            input,
             volume: 1.,
             pan: 0.,
-        };
-        (ret, tx)
+        }
     }
 }
 
 impl Module for Utility {
-    fn frame(&mut self, ctx: &AudioContext) {
-        while let Some(event) = self.rx.try_recv(ctx.now) {
-            match event {
-                UtilityEvent::Volume(val) => self.volume = val,
-                UtilityEvent::Pan(val) => self.pan = val,
-            }
-        }
-    }
-
-    fn compute(&mut self,
-               _ctx: &AudioContext,
-               in_buf: &[Sample],
-               out_buf: &mut [Sample]) {
-        let frame_size = in_buf.len();
+    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
+        let frame_size = out_buf.len();
         let pan = self.pan / 2. + 0.5;
-        for i in 0..(frame_size/2) {
+
+        let node_ref = ctx.get_output_buffer(self.input).unwrap();
+        let in_buf = &node_ref.out_buf;
+
+        for i in 0..(frame_size / 2) {
             out_buf[i * 2] = in_buf[i * 2] * self.volume * (1. - pan);
             out_buf[i * 2 + 1] = in_buf[i * 2 + 1] * self.volume * pan;
         }

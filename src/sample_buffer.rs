@@ -13,6 +13,7 @@ pub struct SampleBuffer {
 }
 
 impl SampleBuffer {
+    // TODO return an error
     pub fn from_file<F: AsRef<Path>>(filepath: F) -> Self {
         use hound;
 
@@ -36,6 +37,9 @@ impl SampleBuffer {
                                     .collect(),
                     16 => wav_reader.into_samples::<i16>()
                                     .map(| s | s.map(| s | s as f32 / i16::MAX as f32))
+                                    .collect(),
+                    24 => wav_reader.into_samples::<i32>()
+                                    .map(| s | s.map(| s | s as f32 / 0x00FFFFFF as f32))
                                     .collect(),
                     32 => wav_reader.into_samples::<i32>()
                                     .map(| s | s.map(| s | s as f32 / i32::MAX as f32))

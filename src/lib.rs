@@ -2,7 +2,6 @@ pub mod channel;
 pub mod modules;
 pub mod event;
 pub mod sample_buffer;
-
 pub mod audio_graph;
 
 //
@@ -15,12 +14,12 @@ use std::{
 
 pub type Sample = f32;
 
-pub struct AudioContext {
+pub struct ComputeContext {
     pub sample_rate: u32,
     pub now: Instant,
 }
 
-impl AudioContext {
+impl ComputeContext {
     pub fn new() -> Self {
         Self {
             sample_rate: 44100,

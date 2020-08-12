@@ -1,11 +1,11 @@
 use crate::{
-    AudioContext,
+    audio_graph::GraphContext,
     Sample,
 };
 
 pub trait Module: Send {
-    fn frame(&mut self, _ctx: &AudioContext) { }
-    fn compute(&mut self, ctx: &AudioContext, out_buf: &mut [Sample]);
+    fn frame(&mut self, _ctx: &GraphContext) { }
+    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]);
 }
 
 mod controlled;
@@ -14,13 +14,13 @@ pub use controlled::*;
 mod sine;
 pub use sine::*;
 
-// mod utility;
-// pub use utility::*;
-
-/*
 mod mixer;
 pub use mixer::*;
 
+mod utility;
+pub use utility::*;
+
+/*
 mod sine2;
 pub use sine2::*;
 
