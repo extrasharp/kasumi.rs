@@ -12,11 +12,22 @@ use std::{
     },
 };
 
+use cpal::{
+    self,
+    SampleRate,
+    traits::*,
+};
+
+use audio_graph::ModuleGraph;
+
+//
+
 pub type Sample = f32;
 
 pub struct ComputeContext {
     pub sample_rate: u32,
     pub now: Instant,
+    pub chunk_len: usize,
 }
 
 impl ComputeContext {
@@ -24,6 +35,7 @@ impl ComputeContext {
         Self {
             sample_rate: 44100,
             now: Instant::now(),
+            chunk_len: 0,
         }
     }
 }
@@ -32,43 +44,51 @@ impl ComputeContext {
 
 pub const CALLBACK_BUFFER_LEN: usize = 2048;
 
-pub struct CallbackBuffer {
-    size: usize,
-    in_buf: Box<[Sample; CALLBACK_BUFFER_LEN]>,
-    out_buf: Box<[Sample; CALLBACK_BUFFER_LEN]>,
+//
+
+pub struct AudioSystem {
+    _stream: cpal::Stream,
 }
 
-impl CallbackBuffer {
-    pub fn new() -> Self {
+impl AudioSystem {
+    pub fn new(mut graph: ModuleGraph) -> Self {
+        let host = cpal::default_host();
+
+        let mut devices = host.devices().unwrap();
+        let device = devices.find(| d | {
+            d.name().unwrap() == "pulse"
+        }).unwrap();
+
+        let mut supported_configs_ranges = device.supported_output_configs()
+            .expect("error while querying configs");
+        let supported_config_range = supported_configs_ranges.next()
+            .expect("no supported configs");
+
+        let s_conf = supported_config_range.with_sample_rate(SampleRate(44100));
+
+        let mut config = s_conf.config();
+        config.channels = 2;
+
+        let mut ac = ComputeContext::new();
+
+        let stream = device.build_output_stream(
+            &config,
+            move | data: &mut [f32], _ | {
+                ac.now = Instant::now();
+
+                graph.frame(&ac);
+
+                for chunk in data.chunks_mut(CALLBACK_BUFFER_LEN) {
+                    ac.chunk_len = chunk.len();
+                    graph.compute(&ac, chunk);
+                }
+            },
+            move | err | {
+            },
+        ).unwrap();
+
         Self {
-            size: 0,
-            in_buf: Box::new([0.; CALLBACK_BUFFER_LEN]),
-            out_buf: Box::new([0.; CALLBACK_BUFFER_LEN]),
+            _stream: stream,
         }
-    }
-
-    pub fn fill_in_buf_f32(&mut self, buf: &[f32]) {
-        if buf.len() > CALLBACK_BUFFER_LEN {
-            panic!();
-        }
-
-        self.size = buf.len();
-        for i in 0..self.size {
-            self.in_buf[i] = buf[i];
-        }
-    }
-
-    pub fn take_out_buf_f32(&self, buf: &mut [f32]) {
-        if self.size > buf.len() {
-            panic!();
-        }
-
-        for i in 0..self.size {
-            buf[i] = self.out_buf[i];
-        }
-    }
-
-    pub fn buffers(&mut self) -> (&[Sample], &mut [Sample]) {
-        (&self.in_buf[0..self.size], &mut self.out_buf[0..self.size])
     }
 }

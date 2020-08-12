@@ -1,7 +1,4 @@
-use std::time::Instant;
-
 use crate::{
-    event::*,
     audio_graph::GraphContext,
     Sample,
 };

@@ -1,6 +1,9 @@
-use std::time::Instant;
-use std::cell::RefCell;
-use std::cell::Ref;
+use std::{
+    cell::{
+        Ref,
+        RefCell,
+    },
+};
 
 use petgraph::{
     algo::{
@@ -12,7 +15,6 @@ use petgraph::{
 };
 
 use crate::{
-    event::*,
     modules::Module,
     ComputeContext,
     Sample,
@@ -26,6 +28,7 @@ pub struct GraphContext<'a> {
 }
 
 impl<'a> GraphContext<'a> {
+    /*
     pub fn get_output_buffer(&self, idx: NodeIndex) -> Result<Ref<GraphNode>, &str> {
         if idx == self.curr_idx {
             Err("1")
@@ -37,29 +40,46 @@ impl<'a> GraphContext<'a> {
             Err("3")
         }
     }
+    */
+
+    pub fn with_output_buffer<F>(&self, idx: NodeIndex, func: F) -> Result<(), &str>
+    where
+        F: FnOnce(&[Sample])
+    {
+        if idx == self.curr_idx {
+            Err("1")
+        } else if !self.graph.graph.contains_edge(idx, self.curr_idx) {
+            Err("2")
+        } else if let Some(gnode) = self.graph.graph.node_weight(idx) {
+            func(&gnode.borrow().out_buf[0..self.audio_context.chunk_len]);
+            Ok(())
+        } else {
+            Err("3")
+        }
+    }
 }
 
 pub struct GraphNode {
-    // TODO, proper ::new()
-    pub name: String,
-    pub module: Box<dyn Module>,
-    pub out_buf: [Sample; CALLBACK_BUFFER_LEN],
+    name: String,
+    module: Box<dyn Module>,
+    out_buf: [Sample; CALLBACK_BUFFER_LEN],
 }
 
-pub struct ModuleGraph {
-    pub output: NodeIndex,
-    pub graph: Graph<RefCell<GraphNode>, ()>,
-    pub sort: Vec<NodeIndex>,
+impl GraphNode {
+    pub fn output_buffer(&self) -> &[Sample] {
+        &self.out_buf
+    }
 }
 
-impl ModuleGraph {
-    pub fn new(graph: Graph<RefCell<GraphNode>, ()>, output: NodeIndex) -> Result<Self, Cycle<NodeIndex>> {
-        let sort = algo::toposort(&graph, None)?;
-        Ok(Self {
-            output,
-            graph,
-            sort,
-        })
+pub struct ModuleGraphBase {
+    graph: Graph<RefCell<GraphNode>, ()>,
+}
+
+impl ModuleGraphBase {
+    pub fn new() -> Self {
+        Self {
+            graph: Graph::new(),
+        }
     }
 
     pub fn add_module<M: Module + 'static>(&mut self, name: String, module: M) -> NodeIndex {
@@ -69,6 +89,29 @@ impl ModuleGraph {
             out_buf: [0.; CALLBACK_BUFFER_LEN],
         }))
     }
+
+    pub fn add_edge(&mut self, from: NodeIndex, to: NodeIndex) {
+        self.graph.add_edge(from, to, ());
+    }
+}
+
+pub struct ModuleGraph {
+    output: NodeIndex,
+    graph: Graph<RefCell<GraphNode>, ()>,
+    sort: Vec<NodeIndex>,
+}
+
+impl ModuleGraph {
+    pub fn new(base: ModuleGraphBase, output: NodeIndex) -> Result<Self, Cycle<NodeIndex>> {
+        let graph = base.graph;
+        let sort = algo::toposort(&graph, None)?;
+        Ok(Self {
+            output,
+            graph,
+            sort,
+        })
+    }
+
 
     pub fn frame(&mut self, ctx: &ComputeContext) {
         let mut ctx = GraphContext {
@@ -104,9 +147,4 @@ impl ModuleGraph {
             out_buf[i] = out_node.out_buf[i];
         }
     }
-
-    /*
-    fn get_buffer(&self, node_idx: NodeIndex) -> &[Sample] {
-    }
-    */
 }

@@ -32,24 +32,11 @@ impl Module for Mixer {
         }
 
         for idx in &self.in_modules {
-            let node_ref = ctx.get_output_buffer(*idx).unwrap();
-            let buf = &node_ref.out_buf;
-            for i in 0..out_buf.len() {
-                out_buf[i] += buf[i];
-            }
+            ctx.with_output_buffer(*idx, | in_buf | {
+                for i in 0..out_buf.len() {
+                    out_buf[i] += in_buf[i];
+                }
+            });
         }
-
-        // self.in_modules.map(ctx.graph.get_buffer)
-        /*
-        for m in self.modules.iter_mut() {
-            for i in 0..out_buf.len() {
-                out_buf[i] = 0.;
-            }
-            m.compute(ctx, &in_buf, &mut self.dummy[0..in_buf.len()]);
-            for i in 0..out_buf.len() {
-                out_buf[i] += self.dummy[i];
-            }
-        }
-        */
     }
 }
