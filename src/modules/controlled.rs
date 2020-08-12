@@ -2,11 +2,14 @@ use std::time::Instant;
 
 use crate::{
     event::*,
-    audio_graph::GraphContext,
+    graph::GraphContext,
     Sample,
 };
 
-use super::Module;
+use super::{
+    InputBuffer,
+    Module,
+};
 
 pub struct Controlled<T: Module> {
     module: T,
@@ -29,13 +32,16 @@ impl<T: Module> Controlled<T> {
 
 impl<T: Module> Module for Controlled<T> {
     fn frame(&mut self, ctx: &GraphContext) {
-        while let Some(func) = self.rx.try_recv(ctx.audio_context.now) {
+        while let Some(func) = self.rx.try_recv(ctx.callback_context().now) {
             func(&mut self.module, ctx);
         }
     }
 
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
-        self.module.compute(ctx, out_buf);
+    fn compute<'a>(&mut self,
+        ctx: &GraphContext,
+        in_bufs: &[InputBuffer<'a>],
+        out_buf: &mut [Sample]) {
+        self.module.compute(ctx, in_bufs, out_buf);
     }
 }
 

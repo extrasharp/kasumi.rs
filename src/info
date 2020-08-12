@@ -1,0 +1,8 @@
+modules just take all the in buffers that are connected to them
+  in what order
+    order that you connect in buffers matters?
+  what order is graph.neighbors?
+    edge weights used to say which connection
+    to determine order
+  main idea is module shouldnt rely on graph structure to find inputs
+

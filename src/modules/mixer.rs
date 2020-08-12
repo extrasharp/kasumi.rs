@@ -2,7 +2,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     Sample,
-    audio_graph::GraphContext,
+    graph::GraphContext,
 };
 
 use super::{
@@ -36,7 +36,7 @@ impl Module for Mixer {
                 for i in 0..out_buf.len() {
                     out_buf[i] += in_buf[i];
                 }
-            });
+            }).unwrap();
         }
     }
 }

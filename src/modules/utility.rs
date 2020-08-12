@@ -2,7 +2,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     Sample,
-    audio_graph::GraphContext,
+    graph::GraphContext,
 };
 
 use super::Module;
@@ -22,6 +22,14 @@ impl Utility {
             volume: 1.,
             pan: 0.,
         }
+    }
+
+    pub fn set_volume(&mut self, to: f32) {
+        self.volume = to;
+    }
+
+    pub fn set_pan(&mut self, to: f32) {
+        self.pan = to;
     }
 }
 

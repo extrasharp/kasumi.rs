@@ -1,18 +1,27 @@
 use crate::{
-    audio_graph::GraphContext,
+    graph::GraphContext,
     Sample,
 };
 
+pub struct InputBuffer<'a> {
+    pub id: usize,
+    pub buf: &'a [Sample],
+}
+
 pub trait Module: Send {
     fn frame(&mut self, _ctx: &GraphContext) { }
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]);
+    fn compute<'a>(&mut self, ctx: &GraphContext,
+        in_bufs: &[InputBuffer<'a>],
+        out_buf: &mut [Sample]);
 }
+
+mod sine;
+pub use sine::*;
 
 mod controlled;
 pub use controlled::*;
 
-mod sine;
-pub use sine::*;
+/*
 
 mod mixer;
 pub use mixer::*;
@@ -20,18 +29,11 @@ pub use mixer::*;
 mod utility;
 pub use utility::*;
 
-/*
-mod sine2;
-pub use sine2::*;
-
-mod chain;
-pub use chain::*;
-
-mod utility;
-pub use utility::*;
-
 mod buf_player;
 pub use buf_player::*;
+
+mod sfx_player;
+pub use sfx_player::*;
 */
 
 /*

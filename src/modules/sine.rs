@@ -1,9 +1,12 @@
 use crate::{
-    audio_graph::GraphContext,
+    graph::GraphContext,
     Sample,
 };
 
-use super::Module;
+use super::{
+    InputBuffer,
+    Module,
+};
 
 //
 
@@ -26,14 +29,15 @@ impl Sine {
 }
 
 impl Module for Sine {
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
-        let sr = ctx.audio_context.sample_rate as f32;
+    fn compute<'a>(&mut self, ctx: &GraphContext, _: &[InputBuffer<'a>], out_buf: &mut [Sample]) {
+        let sr = ctx.callback_context().sample_rate as f32;
         let p_base = std::f32::consts::PI * 2. * self.freq / sr;
-        for i in 0..(out_buf.len() / 2) {
+
+        for ch in out_buf.chunks_mut(2) {
             let period = self.frame_ct as f32 * p_base;
             let s = f32::sin(period);
-            out_buf[i * 2] = s;
-            out_buf[i * 2 + 1] = s;
+            ch[0] = s;
+            ch[1] = s;
             self.frame_ct += 1;
         }
     }
