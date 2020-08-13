@@ -1,7 +1,9 @@
 use crate::{
-    graph::GraphContext,
+    system::CallbackContext,
     Sample,
 };
+
+//
 
 pub struct InputBuffer<'a> {
     pub id: usize,
@@ -9,11 +11,23 @@ pub struct InputBuffer<'a> {
 }
 
 pub trait Module: Send {
-    fn frame(&mut self, _ctx: &GraphContext) { }
-    fn compute<'a>(&mut self, ctx: &GraphContext,
-        in_bufs: &[InputBuffer<'a>],
-        out_buf: &mut [Sample]);
+    fn frame(&mut self, _ctx: &CallbackContext) { }
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]);
 }
+
+pub mod prelude {
+    pub use crate::{
+        system::CallbackContext,
+        Sample,
+    };
+    pub use super::Module;
+    pub use super::InputBuffer;
+}
+
+//
 
 mod sine;
 pub use sine::*;
@@ -21,23 +35,21 @@ pub use sine::*;
 mod controlled;
 pub use controlled::*;
 
-/*
+mod utility;
+pub use utility::*;
 
 mod mixer;
 pub use mixer::*;
 
-mod utility;
-pub use utility::*;
-
 mod buf_player;
 pub use buf_player::*;
 
+/*
 mod sfx_player;
 pub use sfx_player::*;
 */
 
 /*
-
 struct Instrument {
     bank: SampleBank,
 }

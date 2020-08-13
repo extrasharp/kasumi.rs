@@ -1,24 +1,15 @@
-use petgraph::graph::NodeIndex;
-
-use crate::{
-    Sample,
-    graph::GraphContext,
-};
-
-use super::Module;
+use super::prelude::*;
 
 //
 
 pub struct Utility {
-    input: NodeIndex,
     volume: f32,
     pan: f32,
 }
 
 impl Utility {
-    pub fn new(input: NodeIndex) -> Self {
+    pub fn new() -> Self {
         Self {
-            input,
             volume: 1.,
             pan: 0.,
         }
@@ -34,15 +25,21 @@ impl Utility {
 }
 
 impl Module for Utility {
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
-        let frame_size = out_buf.len();
-        let pan = self.pan / 2. + 0.5;
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]) {
+        let i_0 = in_bufs.iter().find(| ib | ib.id == 0);
+        if let Some(ib) = i_0 {
+            let in_buf = ib.buf;
 
-        for i in 0..(frame_size / 2) {
-            ctx.with_output_buffer(self.input, | in_buf | {
+            let frame_size = out_buf.len();
+            let pan = self.pan / 2. + 0.5;
+
+            for i in 0..(frame_size / 2) {
                 out_buf[i * 2] = in_buf[i * 2] * self.volume * (1. - pan);
                 out_buf[i * 2 + 1] = in_buf[i * 2 + 1] * self.volume * pan;
-            }).unwrap();
+            }
         }
     }
 }

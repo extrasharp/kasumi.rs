@@ -4,11 +4,9 @@ use std::{
 
 use crate::{
     sample_buffer::*,
-    graph::GraphContext,
-    Sample,
 };
 
-use super::Module;
+use super::prelude::*;
 
 //
 
@@ -65,7 +63,10 @@ impl BufPlayer {
 }
 
 impl Module for BufPlayer {
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]) {
         if self.is_stopped {
             for smp in out_buf.iter_mut() {
                 *smp = 0.;
@@ -76,7 +77,7 @@ impl Module for BufPlayer {
         let frame_size = out_buf.len();
 
         if let Some(buf) = &self.current_buffer {
-            let mult = buf.sample_rate as f32 * self.play_rate / ctx.callback_context().sample_rate as f32;
+            let mult = buf.sample_rate as f32 * self.play_rate / ctx.sample_rate as f32;
             for i in 0..(frame_size / 2) {
                 let data = &buf.data;
                 let frame_at = self.frame_ct.trunc() as usize;

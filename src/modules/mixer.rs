@@ -1,42 +1,30 @@
-use petgraph::graph::NodeIndex;
-
-use crate::{
-    Sample,
-    graph::GraphContext,
-};
-
-use super::{
-    Module,
-};
+use super::prelude::*;
 
 //
 
 pub struct Mixer {
-    in_modules: Vec<NodeIndex>,
 }
 
 impl Mixer {
-    pub fn new(in_modules: Vec<NodeIndex>) -> Self {
+    pub fn new() -> Self {
         Self {
-            in_modules,
         }
     }
 }
 
-// TODO maybe turning off bounds checking would speed it up
-
 impl Module for Mixer {
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]) {
         for i in 0..out_buf.len() {
             out_buf[i] = 0.;
         }
 
-        for idx in &self.in_modules {
-            ctx.with_output_buffer(*idx, | in_buf | {
-                for i in 0..out_buf.len() {
-                    out_buf[i] += in_buf[i];
-                }
-            }).unwrap();
+        for ib in in_bufs {
+            for i in 0..out_buf.len() {
+                out_buf[i] += ib.buf[i];
+            }
         }
     }
 }

@@ -1,12 +1,4 @@
-use crate::{
-    graph::GraphContext,
-    Sample,
-};
-
-use super::{
-    InputBuffer,
-    Module,
-};
+use super::prelude::*;
 
 //
 
@@ -29,8 +21,8 @@ impl Sine {
 }
 
 impl Module for Sine {
-    fn compute<'a>(&mut self, ctx: &GraphContext, _: &[InputBuffer<'a>], out_buf: &mut [Sample]) {
-        let sr = ctx.callback_context().sample_rate as f32;
+    fn compute<'a>(&mut self, ctx: &CallbackContext, _: &[InputBuffer<'a>], out_buf: &mut [Sample]) {
+        let sr = ctx.sample_rate as f32;
         let p_base = std::f32::consts::PI * 2. * self.freq / sr;
 
         for ch in out_buf.chunks_mut(2) {

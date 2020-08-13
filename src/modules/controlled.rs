@@ -2,18 +2,15 @@ use std::time::Instant;
 
 use crate::{
     event::*,
-    graph::GraphContext,
-    Sample,
 };
 
-use super::{
-    InputBuffer,
-    Module,
-};
+use super::prelude::*;
+
+//
 
 pub struct Controlled<T: Module> {
     module: T,
-    rx: EventReceiver<Box<dyn FnOnce(&mut T, &GraphContext) + Send>>,
+    rx: EventReceiver<Box<dyn FnOnce(&mut T, &CallbackContext) + Send>>,
 }
 
 impl<T: Module> Controlled<T> {
@@ -31,14 +28,14 @@ impl<T: Module> Controlled<T> {
 }
 
 impl<T: Module> Module for Controlled<T> {
-    fn frame(&mut self, ctx: &GraphContext) {
-        while let Some(func) = self.rx.try_recv(ctx.callback_context().now) {
+    fn frame(&mut self, ctx: &CallbackContext) {
+        while let Some(func) = self.rx.try_recv(ctx.now) {
             func(&mut self.module, ctx);
         }
     }
 
     fn compute<'a>(&mut self,
-        ctx: &GraphContext,
+        ctx: &CallbackContext,
         in_bufs: &[InputBuffer<'a>],
         out_buf: &mut [Sample]) {
         self.module.compute(ctx, in_bufs, out_buf);
@@ -48,14 +45,14 @@ impl<T: Module> Module for Controlled<T> {
 //
 
 pub struct Controller<T: Module> {
-    tx: EventSender<Box<dyn FnOnce(&mut T, &GraphContext) + Send>>,
+    tx: EventSender<Box<dyn FnOnce(&mut T, &CallbackContext) + Send>>,
 }
 
 impl<T: Module> Controller<T> {
     #[inline]
     pub fn send<F>(&self, now: Instant, func: F)
     where
-        F: FnOnce(&mut T, &GraphContext) + Send + 'static
+        F: FnOnce(&mut T, &CallbackContext) + Send + 'static
     {
         self.tx.send(now, Box::new(func));
     }
