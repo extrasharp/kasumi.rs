@@ -17,6 +17,18 @@ use kasumi::{
 //
 
 fn main() {
+    let (graph, mut graph_ctl) = ControlledModGraph::new();
+    let sine = graph_ctl.add_module(Sine::new());
+
+    let util = Utility::new();
+    let (util, ctl_util) = Controlled::new(util);
+    let util = graph_ctl.add_module(util);
+    graph_ctl.add_edge(sine, util, 0);
+
+    graph_ctl.set_as_output(Some(util));
+    graph_ctl.push_changes(Instant::now());
+
+    /*
     let mut base = ModuleGraphBase::new();
 
     let sine = Sine::new();
@@ -60,17 +72,27 @@ fn main() {
     });
 
     let a_graph = ModuleGraph::new(base, m_idx).unwrap();
+    */
 
-    let audio_sys = System::new(a_graph);
+    let audio_sys = System::new(graph);
 
     loop {
+        graph_ctl.frame();
         thread::sleep(Duration::from_secs(1));
+        ctl_util.send(Instant::now(), | u, _ | {
+            u.set_volume(0.5);
+        });
+        thread::sleep(Duration::from_secs(1));
+        ctl_util.send(Instant::now(), | u, _ | {
+            u.set_volume(0.25);
+        });
+        /*
         ctl_sine.send(Instant::now(), | s, _ | {
             s.set_frequency(880.);
         });
-        thread::sleep(Duration::from_secs(1));
         ctl_sine.send(Instant::now(), | s, _ | {
             s.set_frequency(440.);
         });
+        */
     }
 }
