@@ -17,7 +17,7 @@ use kasumi::{
 //
 
 fn main() {
-    let (graph, mut graph_ctl) = ControlledModGraph::new();
+    let (graph, mut graph_ctl) = ControlledGraph::new();
     let sine = graph_ctl.add_module(Sine::new());
 
     let util = Utility::new();
@@ -76,8 +76,13 @@ fn main() {
 
     let audio_sys = System::new(graph);
 
+    let start = Instant::now();
+    let mut del_first = false;
+    let mut made_new = false;
+
     loop {
         graph_ctl.frame();
+
         thread::sleep(Duration::from_secs(1));
         ctl_util.send(Instant::now(), | u, _ | {
             u.set_volume(0.5);
@@ -86,6 +91,25 @@ fn main() {
         ctl_util.send(Instant::now(), | u, _ | {
             u.set_volume(0.25);
         });
+
+        let tm = start.elapsed().as_secs_f32();
+        if tm > 5. && !del_first {
+            println!("del");
+            graph_ctl.remove_module(sine);
+            graph_ctl.push_changes(Instant::now());
+            del_first = true;
+        } else if tm > 10. && !made_new {
+            println!("new");
+            let (s, s_ctl) = Controlled::new(Sine::new());
+            s_ctl.send(Instant::now(), | s, _ | {
+                s.set_frequency(550.);
+            });
+            let s = graph_ctl.add_module(s);
+            graph_ctl.add_edge(s, util, 0);
+            graph_ctl.push_changes(Instant::now());
+            made_new = true;
+        }
+
         /*
         ctl_sine.send(Instant::now(), | s, _ | {
             s.set_frequency(880.);

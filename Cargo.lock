@@ -224,7 +224,6 @@ version = "0.1.0"
 dependencies = [
  "cpal",
  "crossbeam-queue",
- "crossbeam-utils",
  "hound",
  "ika",
  "petgraph",

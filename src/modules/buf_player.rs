@@ -63,6 +63,11 @@ impl BufPlayer {
 }
 
 impl Module for BufPlayer {
+    fn is_finished(&self) -> bool {
+        // TODO
+        false
+    }
+
     fn compute<'a>(&mut self,
                    ctx: &CallbackContext,
                    in_bufs: &[InputBuffer<'a>],

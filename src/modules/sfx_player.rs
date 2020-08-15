@@ -5,15 +5,12 @@ use crate::{
         CALLBACK_BUFFER_LEN,
     },
     sample_buffer::*,
-    graph::GraphContext,
-    Sample,
 };
 
 use super::{
-    Module,
-    InputBuffer,
-    BufPlayer,
+    prelude::*,
     Utility,
+    BufPlayer,
 };
 
 //
@@ -27,9 +24,13 @@ struct UtilPlay {
 }
 
 impl Module for UtilPlay {
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
-        self.bp.compute(ctx, &mut self.buf);
-        self.u.compute2(ctx, &[InputBuffer{id:0, buf:&self.buf}], out_buf);
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   _in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]) {
+        let frame_len = out_buf.len();
+        self.bp.compute(ctx, &[], &mut self.buf[0..frame_len]);
+        self.u.compute(ctx, &[InputBuffer::new(0, &self.buf)], &mut out_buf[0..frame_len]);
     }
 }
 
@@ -47,7 +48,7 @@ impl SfxPlayer {
 }
 
 impl Module for SfxPlayer {
-    fn frame(&mut self, ctx: &GraphContext) {
+    fn frame(&mut self, ctx: &CallbackContext) {
         /*
         self.pool.reclaim_unstable(| up | {
             up.bp.is_stopped()
@@ -55,6 +56,9 @@ impl Module for SfxPlayer {
         */
     }
 
-    fn compute(&mut self, ctx: &GraphContext, out_buf: &mut [Sample]) {
+    fn compute<'a>(&mut self,
+                   ctx: &CallbackContext,
+                   _in_bufs: &[InputBuffer<'a>],
+                   out_buf: &mut [Sample]) {
     }
 }

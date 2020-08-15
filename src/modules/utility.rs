@@ -40,6 +40,10 @@ impl Module for Utility {
                 out_buf[i * 2] = in_buf[i * 2] * self.volume * (1. - pan);
                 out_buf[i * 2 + 1] = in_buf[i * 2 + 1] * self.volume * pan;
             }
+        } else {
+            for i in 0..out_buf.len() {
+                out_buf[i] = 0.;
+            }
         }
     }
 }

@@ -10,8 +10,23 @@ pub struct InputBuffer<'a> {
     pub buf: &'a [Sample],
 }
 
+impl<'a> InputBuffer<'a> {
+    pub fn new(id: usize, buf: &'a [Sample]) -> Self {
+        Self {
+            id,
+            buf,
+        }
+    }
+}
+
 pub trait Module: Send {
-    fn frame(&mut self, _ctx: &CallbackContext) { }
+    fn is_finished(&self) -> bool {
+        false
+    }
+
+    fn frame(&mut self, _ctx: &CallbackContext) {
+    }
+
     fn compute<'a>(&mut self,
                    ctx: &CallbackContext,
                    in_bufs: &[InputBuffer<'a>],
@@ -23,8 +38,10 @@ pub mod prelude {
         system::CallbackContext,
         Sample,
     };
-    pub use super::Module;
-    pub use super::InputBuffer;
+    pub use super::{
+        Module,
+        InputBuffer,
+    };
 }
 
 //
@@ -44,10 +61,8 @@ pub use mixer::*;
 mod buf_player;
 pub use buf_player::*;
 
-/*
 mod sfx_player;
 pub use sfx_player::*;
-*/
 
 /*
 struct Instrument {

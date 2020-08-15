@@ -8,10 +8,10 @@ edition = "2018"
 
 [dependencies]
 crossbeam-queue = "0.2"
-crossbeam-utils = "0.7"
-cpal = {git = "https://github.com/RustAudio/cpal" }
 hound = "3"
-ika = {path="/home/mel/documents/_programming/rust/ika"}
+petgraph = "0.5"
 smallvec = "1"
 
-petgraph = "0.5"
+cpal = {git = "https://github.com/RustAudio/cpal" }
+
+ika = {path="/home/mel/documents/_programming/rust/ika"}

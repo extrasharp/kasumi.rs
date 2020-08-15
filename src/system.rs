@@ -9,7 +9,7 @@ use cpal::{
 };
 
 use crate::{
-    graph::ControlledModGraph,
+    graph::ControlledGraph,
 };
 
 //
@@ -39,7 +39,7 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(mut graph: ControlledModGraph) -> Self {
+    pub fn new(mut graph: ControlledGraph) -> Self {
         let host = cpal::default_host();
 
         let mut devices = host.devices().unwrap();

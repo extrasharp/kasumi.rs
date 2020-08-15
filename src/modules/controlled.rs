@@ -28,6 +28,10 @@ impl<T: Module> Controlled<T> {
 }
 
 impl<T: Module> Module for Controlled<T> {
+    fn is_finished(&self) -> bool {
+        self.module.is_finished()
+    }
+
     fn frame(&mut self, ctx: &CallbackContext) {
         while let Some(func) = self.rx.try_recv(ctx.now) {
             func(&mut self.module, ctx);
